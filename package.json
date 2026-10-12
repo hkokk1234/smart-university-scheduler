@@ -1,0 +1,16 @@
+{
+  "name": "smart-university-scheduler",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["frontend"],
+  "engines": { "node": ">=22.12.0 <23", "npm": ">=10 <11" },
+  "scripts": {
+    "dev": "npm run dev --workspace frontend",
+    "build": "npm run build --workspace frontend",
+    "typecheck": "npm run typecheck --workspace frontend",
+    "lint": "npm run lint --workspace frontend",
+    "preview": "npm run preview --workspace frontend",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down"
+  }
+}

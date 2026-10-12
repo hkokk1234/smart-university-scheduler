@@ -1,0 +1,95 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #faf8f4;
+  --foreground: #292522;
+  --card: #fffdfa;
+  --card-foreground: #292522;
+  --primary: #801e31;
+  --primary-foreground: #ffffff;
+  --secondary: #f2e9e7;
+  --secondary-foreground: #702236;
+  --muted: #f2f0ec;
+  --muted-foreground: #726b64;
+  --accent: #f2e9e7;
+  --accent-foreground: #292522;
+  --destructive: #dc2626;
+  --popover: #fffdfa;
+  --popover-foreground: #0f172a;
+  --border: #e9e1db;
+  --input: #dcd2ca;
+  --ring: #a51c30;
+}
+
+.dark {
+  color-scheme: dark;
+  --background: #171315;
+  --foreground: #f2ecea;
+  --card: #20191b;
+  --card-foreground: #f2ecea;
+  --primary: #dc9aa6;
+  --primary-foreground: #2a1016;
+  --secondary: #39252a;
+  --secondary-foreground: #f1c4c8;
+  --muted: #292124;
+  --muted-foreground: #b8a9a8;
+  --accent: #42272d;
+  --accent-foreground: #f2ecea;
+  --border: #403337;
+  --input: #53434a;
+  --ring: #dc9aa6;
+  --popover: #20191b;
+  --popover-foreground: #e8eeea;
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply m-0 bg-background text-foreground antialiased; font-family: ui-sans-serif, system-ui, sans-serif; }
+  button:not(:disabled), a, select { cursor: pointer; }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+}
+
+.calendar-shell .fc {
+  --fc-border-color: var(--border);
+  --fc-page-bg-color: var(--card);
+  --fc-neutral-bg-color: var(--muted);
+  --fc-today-bg-color: transparent;
+  --fc-event-border-color: transparent;
+  font-size: 0.78rem;
+}
+.calendar-shell .fc-col-header-cell-cushion { padding: 16px 4px; font-weight: 600; }
+.calendar-shell .fc-timegrid-slot { height: 2.3rem; }
+.calendar-shell.compact .fc-timegrid-slot { height: 1.65rem; }
+.calendar-shell .fc-timegrid-slot-label-cushion { color: var(--muted-foreground); font-size: 10px; }
+.calendar-shell .fc-timegrid-event { border-radius: 7px; box-shadow: none; padding: 4px; cursor: pointer; }
+.calendar-shell .fc-timegrid-event:focus { outline: 2px solid var(--ring); outline-offset: 2px; }
+.calendar-shell .fc-scrollgrid { border-radius: 12px; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
