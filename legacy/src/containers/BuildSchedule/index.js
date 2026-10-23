@@ -1,0 +1,642 @@
+import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useMixpanel } from "hooks/useMixpanel";
+import {
+  Button,
+  useColorModeValue,
+  Image,
+  InputGroup,
+  InputLeftElement,
+  Center,
+  Text,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalBody,
+  useDisclosure,
+  ModalCloseButton,
+} from "@chakra-ui/react";
+import { Link } from "react-router-dom";
+import styled from "styled-components";
+import Helmet from "react-helmet";
+
+import { setCourses as reduxSetCourses } from "redux/modules/courses";
+import { setLoading } from "redux/modules/appState";
+import { getCourses, getCoursesByKd } from "services/api";
+import { clearSchedule } from "redux/modules/schedules";
+import SelectedCourses from "containers/SelectedCourses";
+import { BauhausSide } from "components/Bauhaus";
+import { useSchedulePersistence } from "hooks/useSchedulePersistence"; // Import the custom hook
+import Checkout from "./Checkout";
+import Course from "./Course";
+import Detail from "./Detail";
+import SearchInput, { filterMethod } from "../../components/SearchInput";
+
+import searchImg from "assets/Search.svg";
+import searchImgDark from "assets/Search-dark.svg";
+import arrowImg from "assets/Arrow.svg";
+import notFoundImg from "assets/NotFound.svg";
+import notFoundDarkImg from "assets/NotFound-dark.svg";
+import SelectMajor from "./SelectMajor";
+import settingsImg from "assets/Settings.svg";
+import settingsDarkImg from "assets/Settings-dark.svg";
+import SIAKNGSLCM from "assets/SIAKNG-SLCM.svg";
+import SIAKNGSLCMDark from "assets/SIAKNG-SLCM-Dark.svg";
+
+function BuildSchedule() {
+  const isAnnouncement =useSelector((state) => state.appState.isAnnouncement);
+  const isMobile =useSelector((state) => state.appState.isMobile);
+  const auth =useSelector((state) => state.auth);
+  const dispatch =useDispatch();
+
+  const { saveSchedulesToSessionStorage, restoreSchedulesFromSessionStorage } =
+    useSchedulePersistence();
+
+  const [majorSelected, setMajorSelected] =useState();
+  const [detailData, setDetailData] =useState(null);
+  const [courses, setCourses] =useState(null);
+  const [lastUpdated, setLastUpdated] =useState(null);
+  const [isCoursesDetail, setCoursesDetail] =useState(null);
+  const [value, setValue] =useState("");
+  const [showSelectMajor, setShowSelectMajor] =useState(false);
+  const { isOpen, onOpen, onClose } =useDisclosure();
+
+  const theme =useColorModeValue("light", "dark");
+  const isInitialMount =useRef(true);
+
+  const handleCloseModal =useCallback(() => {
+    try {
+      localStorage.setItem("buildScheduleModalDismissed", "true");
+    } catch (error) {
+      console.warn("Could not persist modal dismissal state:", error);
+    }
+    onClose();
+  }, [onClose]);
+
+  const fetchedMajorId =useRef(null);
+  const fetchedMajorSelected =useRef(null);
+  const hasInitialData =useRef(false);
+  const coursesLoaded =useRef(false);
+
+  const fetchCourses =useCallback(
+    async (majorId, majorSelected, shouldClearSchedule =false) => {
+      const isSameMajor =fetchedMajorId.current ===majorId;
+      const isSameMajorSelected =
+        fetchedMajorSelected.current ===majorSelected;
+
+      if (isSameMajor && isSameMajorSelected && hasInitialData.current) {
+        return;
+      }
+
+      dispatch(setLoading(true));
+      useMixpanel.track("loading_impression", {
+        eventName: "loading_impression",
+        eventAction: "impression",
+        eventCategory: "state",
+        screenName: "Buat Jadwal",
+        screenOwner: "desktop_web",
+        eventLabel: "/susun::loading-state-shown",
+      });
+
+      try {
+        const { data } =majorSelected
+          ? await getCoursesByKd(majorSelected.kd_org)
+          : await getCourses(majorId);
+
+        if (shouldClearSchedule && coursesLoaded.current) {
+          saveSchedulesToSessionStorage();
+          dispatch(clearSchedule());
+        }
+
+        setCourses(data.courses);
+        setCoursesDetail(data.courses?.length > 0);
+        setLastUpdated(
+          data.last_update_at ? new Date(data.last_update_at) : null,
+        );
+        dispatch(reduxSetCourses(data.courses));
+
+        fetchedMajorId.current =majorId;
+        fetchedMajorSelected.current =majorSelected;
+        hasInitialData.current =true;
+        coursesLoaded.current =true;
+
+        if (!shouldClearSchedule && data.courses) {
+          setTimeout(() => {
+            restoreSchedulesFromSessionStorage();
+          }, 100);
+        }
+      } catch (e) {
+        console.error("Error fetching courses:", e);
+        // If there's an error (e.g., major not found), we should still mark the fetch as done to avoid refetching
+        fetchedMajorId.current =majorId;
+        fetchedMajorSelected.current =majorSelected;
+        hasInitialData.current =true;
+        coursesLoaded.current =true;
+        setCourses(null);
+        setCoursesDetail(null);
+      }
+
+      setTimeout(() => dispatch(setLoading(false)), 1000);
+    },
+    [
+      dispatch,
+      saveSchedulesToSessionStorage,
+      restoreSchedulesFromSessionStorage,
+    ],
+  );
+
+  useEffect(() => {
+    if (!hasInitialData.current) {
+      document.getElementById("input")?.value &&
+        (document.getElementById("input").value ="");
+      setValue("");
+      const majorId =auth.majorId;
+      const restored =restoreSchedulesFromSessionStorage();
+      if (!restored) {
+        fetchCourses(majorId, majorSelected, false);
+      } else {
+        fetchCourses(majorId, majorSelected, false);
+      }
+    }
+
+    const modalDismissed =
+      typeof window !=="undefined" &&
+      localStorage.getItem("buildScheduleModalDismissed") ==="true";
+
+    if (!modalDismissed) {
+      onOpen();
+    }
+  }, [
+    auth.majorId,
+    fetchCourses,
+    onOpen,
+    restoreSchedulesFromSessionStorage,
+    majorSelected,
+  ]);
+
+  useEffect(() => {
+    if (
+      hasInitialData.current &&
+      majorSelected?.kd_org !==fetchedMajorSelected.current
+    ) {
+      document.getElementById("input")?.value &&
+        (document.getElementById("input").value ="");
+      setValue("");
+      const majorId =auth.majorId;
+
+      fetchCourses(majorId, majorSelected, true);
+    }
+  }, [majorSelected, auth.majorId, fetchCourses]);
+
+  useEffect(() => {
+    const handleFocus =() => {
+      if (hasInitialData.current && courses) {
+        restoreSchedulesFromSessionStorage();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [courses, restoreSchedulesFromSessionStorage]);
+
+  let filteredCourse =!value ? courses : filterMethod(courses, value);
+
+  const groupedCourses =
+    filteredCourse && filteredCourse.length > 0
+      ? filteredCourse.reduce(
+          (acc, course) => {
+            if (course.category ==="Kelas Internal") {
+              acc.internal.push(course);
+            } else if (course.category ==="Kelas Eksternal") {
+              acc.external.push(course);
+            } else {
+              acc.bersama.push(course);
+            }
+            return acc;
+          },
+          { internal: [], external: [], bersama: [] },
+        )
+      : null;
+
+  useEffect(() => {
+    useMixpanel.track("susun_page_impression", {
+      eventName: "susun_page_impression",
+      eventAction: "impression",
+      eventCategory: "page",
+      screenName: "Buat Jadwal",
+      screenOwner: "desktop_web",
+      eventLabel: "/susun::page-loaded",
+    });
+  }, []);
+
+  useEffect(() => {
+    if (isInitialMount.current) isInitialMount.current =false;
+    else useMixpanel.track("search_course");
+  }, [value]);
+
+  useEffect(() => {
+    if (!isCoursesDetail && majorSelected) {
+      useMixpanel.track("empty_state_impression", {
+        eventName: "empty_state_impression",
+        eventAction: "impression",
+        eventCategory: "state",
+        fieldName: `fakultas: ${majorSelected.study_program}, prodi: ${majorSelected.educational_program}`,
+        screenName: "Buat Jadwal",
+        screenOwner: "desktop_web",
+        eventLabel: "/susun::empty-state-shown",
+      });
+    }
+  }, [isCoursesDetail, majorSelected]);
+
+  return (
+    <Container>
+      <BauhausSide />
+      <Helmet title="Buat Jadwal" />
+
+      <CoursePickerContainer isMobile={isMobile} mode={theme}>
+        {isMobile}
+        <h1>Buat Jadwal</h1>
+
+        {lastUpdated && courses && (
+          <h6>
+            Jadwal terakhir diperbarui pada {isMobile ? <br /> : " "}
+            <span>
+              {lastUpdated?.getDate() +
+                "/" +
+                (lastUpdated?.getMonth() + 1) +
+                "/" +
+                lastUpdated?.getFullYear() +
+                " " +
+                lastUpdated?.toLocaleTimeString()}
+            </span>
+          </h6>
+        )}
+        <div
+          style={{
+            marginTop: !isCoursesDetail && majorSelected ? "20px" : "0",
+          }}
+        >
+          <SelectMajor
+            theme={theme}
+            isMobile={isMobile}
+            setMajorSelected={setMajorSelected}
+            show={isMobile ? showSelectMajor : true}
+          />
+          <div
+            style={{
+              position: "relative",
+            }}
+          >
+            <InputGroup h={isMobile ? "44px" : "57px"} mb="26px">
+              <InputLeftElement
+                h="full"
+                pl={isMobile ? "14px" : "20px"}
+                pointerEvents="none"
+                children={
+                  <Image
+                    alt=""
+                    src={theme ==="light" ? searchImg : searchImgDark}
+                  />
+                }
+              />
+              <SearchInput
+                isMobile={isMobile}
+                placeholder="Cari Mata Kuliah"
+                theme={theme}
+                options={courses}
+                setValue={setValue}
+              />
+
+              <Button
+                w="95px"
+                h="full"
+                borderLeftRadius="0"
+                bg={
+                  theme ==="light" ? "primary.Purple" : "primary.LightPurple"
+                }
+                onMouseDown={() =>
+                  setValue(document.getElementById("input").value)
+                }
+                fontSize={isMobile && "14px"}
+                px={isMobile && "4px"}
+                display={isMobile && "none"}
+              >
+                <Center>
+                  Cari
+                  <Image alt="" src={arrowImg} ml="9px" />
+                </Center>
+              </Button>
+              <Button
+                variant="outline"
+                marginLeft="10px"
+                height="44px"
+                width="44px"
+                p="0"
+                display={isMobile ? "flex" : "none"}
+                onClick={() => setShowSelectMajor(!showSelectMajor)}
+                borderColor={theme ==="dark" && "primary.LightPurple"}
+              >
+                <Image
+                  alt="Show"
+                  src={theme ==="light" ? settingsImg : settingsDarkImg}
+                />
+              </Button>
+            </InputGroup>
+          </div>
+        </div>
+
+        {!isCoursesDetail && majorSelected && (
+          <Center flexDirection="column" mt="3.5rem">
+            <Image
+              alt=""
+              src={theme ==="light" ? notFoundImg : notFoundDarkImg}
+            />
+            <Text
+              mt="20px"
+              color={theme ==="light" ? "#33333399" : "#FFFFFF99"}
+              textAlign="center"
+              maxW="450px"
+            >
+              Oops, belum ada mahasiswa dari jurusan{" "}
+              {majorSelected.study_program.replace(/ *\([^)]*\) */g, "")},{" "}
+              {majorSelected.educational_program.replace(/ *\([^)]*\) */g, "")}{" "}
+              yang melakukan{" "}
+              <Link to="/update">
+                <Text color={theme ==="light" ? "#5038BC" : "#917DEC"} as="u">
+                  <span>update matkul</span>
+                </Text>
+              </Link>
+            </Text>
+          </Center>
+        )}
+
+        {courses ===null && (
+          <InfoContent mode={theme}>
+            <p>
+              Uh oh, sepertinya jadwal jurusan kamu belum tersedia. Silahkan
+              coba untuk melakukan <span>Update Matkul</span> lagi nanti!
+            </p>
+            <Link to="/update">
+              <Button
+                mt={{ base: "1rem", lg: "1.5rem" }}
+                bg={theme ==="light" ? "primary.Purple" : "dark.LightPurple"}
+                color={theme ==="light" ? "white" : "dark.White"}
+              >
+                Update Matkul
+              </Button>
+            </Link>
+          </InfoContent>
+        )}
+
+        {filteredCourse &&
+          (filteredCourse?.length ===0 ? (
+            <Center flexDirection="column" mt="3.5rem">
+              <Image
+                alt=""
+                src={theme ==="light" ? notFoundImg : notFoundDarkImg}
+              />
+              <Text
+                mt="20px"
+                color={theme ==="light" ? "#33333399" : "#FFFFFF99"}
+                textAlign="center"
+              >
+                Mata kuliah yang dicari tidak ditemukan
+              </Text>
+              <Text
+                fontWeight={"semibold"}
+                color={theme ==="light" ? "#000000" : "#FFFFFF"}
+              >
+                Some users may experience missing course information. We are
+                currently fixing this problem.
+              </Text>
+            </Center>
+          ) : (
+            <>
+              {groupedCourses && groupedCourses.internal.length > 0 && (
+                <>
+                  <CategoryHeading
+                    $color={theme ==="light" ? "#5038BC" : "#917DEC"}
+                    $mode={theme}
+                  >
+                    Kelas Internal
+                  </CategoryHeading>
+                  {groupedCourses.internal.map((course, idx) => (
+                    <Course
+                      key={`internal-${course.name}-${idx}`}
+                      course={course}
+                    />
+                  ))}
+                </>
+              )}
+              {groupedCourses && groupedCourses.external.length > 0 && (
+                <>
+                  <CategoryHeading
+                    $color={theme ==="light" ? "#5038BC" : "#917DEC"}
+                    $mode={theme}
+                  >
+                    Kelas Eksternal
+                  </CategoryHeading>
+                  {groupedCourses.external.map((course, idx) => (
+                    <Course
+                      key={`external-${course.name}-${idx}`}
+                      course={course}
+                    />
+                  ))}
+                </>
+              )}
+              {groupedCourses && groupedCourses.bersama.length > 0 && (
+                <>
+                  <CategoryHeading
+                    $color={theme ==="light" ? "#5038BC" : "#917DEC"}
+                    $mode={theme}
+                  >
+                    Kelas Bersama
+                  </CategoryHeading>
+                  {groupedCourses.bersama.map((course, idx) => (
+                    <Course
+                      key={`bersama-${course.name}-${idx}`}
+                      course={course}
+                    />
+                  ))}
+                </>
+              )}
+            </>
+          ))}
+      </CoursePickerContainer>
+
+      {!isMobile && (
+        <SelectedCoursesContainer isAnnouncement={isAnnouncement} mode={theme}>
+          <SelectedCourses />
+        </SelectedCoursesContainer>
+      )}
+
+      <Checkout
+        isMobile={isMobile}
+        onClickDetail={(isConflict) =>
+          setDetailData({ opened: true, isConflict: isConflict })
+        }
+      />
+
+      {detailData && detailData.opened && (
+        <Detail
+          closeDetail={() =>
+            setDetailData({ opened: false, isConflict: detailData.isConflict })
+          }
+          isConflict={detailData && detailData.isConflict}
+        />
+      )}
+
+      <Modal isOpen={isOpen} onClose={handleCloseModal} isCentered>
+        <ModalOverlay />
+        <ModalContent
+          mx={{ base: "1.5rem", md: "0" }}
+          w={{ base: "100%", sm: "700px" }}
+        >
+          <ModalCloseButton />
+          <ModalBody
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              textAlign: "center",
+              padding: "40px 32px",
+              gap: "12px",
+            }}
+          >
+            <Image
+              alt=""
+              src={theme ==="light" ? SIAKNGSLCM : SIAKNGSLCMDark}
+              w={{ base: "50%", md: "auto" }}
+              h="auto"
+              maxW="100%"
+            />
+            <Text fontSize="2xl" fontWeight="bold">
+              Perubahan pada Sistem Jadwal
+            </Text>
+            <Text fontSize={{ base: "sm", md: "md" }} maxW="400px">
+              Dikarenakan sedang dalam masa transisi SIAK-SLCM, update matkul
+              belum dapat dilakukan. Silakan cek kembali setelah sistem kembali
+              normal.
+            </Text>
+            <Button
+              onClick={handleCloseModal}
+              w="100%"
+              h="48px"
+              _hover={{ opacity: 0.9 }}
+            >
+              Mengerti
+            </Button>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </Container>
+  );
+}
+
+export default BuildSchedule;
+
+export const Container =styled.div`
+  display: flex;
+  color: ${(props) => props.theme.color.secondaryMineShaft};
+  margin-top: -40px;
+
+  @media (min-width: 900px) {
+    margin-top: 0px;
+  }
+`;
+
+export const InfoContent =styled.div`
+  margin: 48px 0 16px;
+  text-align: center;
+  min-height: 100vh;
+  font-size: 16px;
+
+  p {
+    color: ${({ mode }) =>
+      mode ==="light"
+        ? (props) => props.theme.color.secondaryMineshaft
+        : (props) => props.theme.color.darkWhite}
+  }
+
+  p span {
+    color: ${({ mode }) =>
+      mode ==="light"
+        ? (props) => props.theme.color.primaryPurple
+        : (props) => props.theme.color.darkPurple}
+    font-weight: 600;
+  }
+
+  @media (min-width: 900px) {
+    margin-top: 24px;
+    text-align: left;
+    font-size: 18px;
+    width: 80%;
+  }
+`;
+
+export const CoursePickerContainer =styled.div`
+  width: ${({ isMobile }) => (isMobile ? "100%" : "70%;")};
+  color: #333333;
+
+  h1 {
+    color: ${({ mode }) =>
+      mode ==="light"
+        ? (props) => props.theme.color.primaryPurple
+        : (props) => props.theme.color.darkPurple};
+    font-weight: bold;
+    font-size: 24px;
+    text-align: center;
+  }
+
+  h6 {
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 20px;
+    color: ${({ mode }) =>
+      mode ==="light" ? "#333333" : (props) => props.theme.color.darkWhite};
+  }
+
+  h6 span {
+    font-weight: 600;
+  }
+
+  @media (min-width: 900px) {
+    h1 {
+      font-size: 32px;
+      text-align: left;
+    }
+
+    h6 {
+      font-size: 16px;
+      text-align: left;
+    }
+  }
+`;
+
+export const SelectedCoursesContainer =styled.div`
+  background-color: ${({ mode }) =>
+    mode ==="light"
+      ? (props) => props.theme.color.primaryWhite
+      : (props) => props.theme.color.darkBlack};
+  padding: ${({ isAnnouncement }) =>
+    isAnnouncement ? "162px 32px" : "120px 32px"};
+  overflow-y: auto;
+  position: fixed;
+  height: 100vh;
+  width: 30%;
+  right: 0;
+  top: 0;
+
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.15);
+`;
+
+const CategoryHeading =styled.h2`
+  font-size: 20px;
+  font-weight: bold;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  color: ${({ $color }) => $color || "#5038BC"};
+  padding-bottom: 8px
+  border-bottom: 1px solid ${({ $mode }) =>
+    $mode ==="light" ? "#b1b1b1" : "white"};
+`;

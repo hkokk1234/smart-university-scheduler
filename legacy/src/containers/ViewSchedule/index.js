@@ -1,0 +1,871 @@
+import React, { useEffect, useState, useRef } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { useMixpanel } from "hooks/useMixpanel";
+import { useParams, useLocation, Link } from "react-router-dom";
+import styled from "styled-components";
+import Helmet from "react-helmet";
+import ReactGA from "react-ga";
+import CopyToClipboard from "react-copy-to-clipboard";
+import * as htmlToImage from "html-to-image";
+import { copyImageToClipboard } from "copy-image-clipboard";
+import {
+  Button,
+  Modal,
+  ModalOverlay,
+  ModalContent as ChakraModalContent,
+  ModalFooter as ChakraModalFooter,
+  ModalBody,
+  useDisclosure,
+  ModalCloseButton,
+  Text,
+  Flex,
+  Image,
+  useColorModeValue,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverBody,
+} from "@chakra-ui/react";
+import { CalendarIcon } from "@heroicons/react/solid";
+
+import Schedule from "./Schedule";
+import ScheduleList from "./ScheduleList";
+import ControlledInput from "./ControlledInput";
+import DownloadRef from "./DownloadRef";
+import { SuccessToast, ErrorToast } from "components/Toast";
+import Icons from "components/Icons";
+import { getSchedule, postRenameSchedule, deleteSchedule } from "services/api";
+import useDownloadCalendar from "hooks/useDownloadCalendar";
+import { setLoading } from "redux/modules/appState";
+import getFormattedSchedule from "utils/schedule";
+import { makeAtLeastMs } from "utils/promise";
+import { decodeHtmlEntity } from "utils/string";
+
+import alertImg from "assets/Alert2.svg";
+import linkImg from "assets/Link.svg";
+import copyImg from "assets/Copy.svg";
+import alertDarkImg from "assets/Alert-dark.svg";
+import linkDarkImg from "assets/Link-dark.svg";
+import copyDarkImg from "assets/Copy-dark.svg";
+import downloadImg from "assets/Download.svg";
+import deleteImg from "assets/Delete.svg";
+import clipboardImg from "assets/Clipboard.svg";
+import ics2026Img from "assets/ics2026.svg";
+import { ListMatkulIcon } from "assets/ListMatkulIcon";
+
+import FeedbackModal from "./FeedbackModal";
+import GoogleCalendarModal from "./GoogleCalendarModal";
+
+import CompareModal from "../ScheduleList/CompareModal";
+import compareSchedule from "assets/compare-schedule-white.svg";
+import compareBulb from "assets/compare-bulb.svg";
+import pencilIcon from "assets/pencil-icon.svg";
+import pencilIconDark from "assets/pencilIconDark.svg";
+import { RiArrowLeftLongLine } from "react-icons/ri";
+
+function ViewSchedule({ match, history }) {
+  const isMobile =useSelector((state) => state.appState.isMobile);
+  const theme =useColorModeValue("light", "dark");
+  const { isOpen, onOpen, onClose } =useDisclosure();
+  const shareModal =useDisclosure();
+  const feedbackModal =useDisclosure();
+  const googleCalendarModal =useDisclosure();
+  const auth =useSelector((state) => state.auth);
+  const { scheduleId } =useParams();
+  const dispatch =useDispatch();
+  const { generateICalendarFile } =useDownloadCalendar(theme);
+
+  const [schedule, setSchedule] =useState(null);
+  const [createdAt, setCreatedAt] =useState(null);
+  const [isDisplayTimetable, setIsDisplayTimetable] =useState(true);
+  const [imageURL, setImageURL] =useState(null);
+
+  const location =useLocation();
+  const compareModal =useDisclosure();
+
+  let formattedSchedule ={};
+  let totalCredits =0;
+
+  if (schedule) {
+    [formattedSchedule, totalCredits] =getFormattedSchedule(schedule);
+  }
+
+  async function onRename(slug, value) {
+    if (auth) {
+      await postRenameSchedule(auth.userId, slug, value);
+      setSchedule({ ...schedule, name: value });
+    }
+  }
+
+  useEffect(() => {
+    async function fetchSchedule() {
+      dispatch(setLoading(true));
+      const {
+        data: { user_schedule },
+      } =await makeAtLeastMs(getSchedule(match.params.scheduleId), 1000);
+      setSchedule(user_schedule);
+      setCreatedAt(new Date(user_schedule.created_at));
+      dispatch(setLoading(false));
+    }
+    fetchSchedule();
+    if (location.state?.feedbackPopup) {
+      feedbackModal.onOpen();
+      useMixpanel.track("feedback_impression", {
+        eventName: "feedback_impression",
+        eventAction: "impression",
+        eventCategory: "modal",
+        screenName: "Buat Jadwal",
+        screenOwner: "desktop_web",
+        eventLabel: "/susun::feedback-modal-shown",
+      });
+    }
+  }, [scheduleId, dispatch]);
+
+  const scheduleName =schedule && schedule.name;
+
+  const showAlertCopy =(type) => {
+    ReactGA.event({
+      category: "Bagikan Jadwal",
+      action: "Copied a schedule's URL",
+    });
+    SuccessToast(`${type} berhasil disalin!`, isMobile, theme);
+  };
+
+  const showErrorCopy =() => {
+    ReactGA.event({
+      category: "Bagikan Jadwal",
+      action: "Copied a schedule's image",
+    });
+    ErrorToast(
+      "Uh oh, terjadi kesalahan. Coba ganti browser atau device yang Anda gunakan.",
+      isMobile,
+      theme,
+    );
+  };
+
+  const performDeleteSchedule =async (userId, scheduleId) => {
+    ReactGA.event({
+      category: "Hapus Jadwal",
+      action: "Deleted a schedule",
+    });
+    dispatch(setLoading(true));
+    await makeAtLeastMs(deleteSchedule(userId, scheduleId), 1000);
+    history.push("/jadwal");
+  };
+
+  const confirmDeleteSchedule =(scheduleId) => {
+    performDeleteSchedule(auth.userId, scheduleId);
+  };
+
+  const refs =useRef(null);
+
+  const downloadImage =async () => {
+    ReactGA.event({
+      category: "Download Jadwal Image",
+      action: "Downloaded a schedule's image",
+    });
+
+    const dataUrl =await htmlToImage.toPng(refs.current);
+    const link =document.createElement("a");
+
+    link.download =!scheduleName ? "Untitled.png" : scheduleName + ".png";
+    link.href =dataUrl;
+    link.click();
+  };
+
+  const openShareModal =async () => {
+    const dataUrl =await htmlToImage.toPng(refs.current);
+    setImageURL(dataUrl);
+    shareModal.onOpen();
+  };
+
+  const copyImage =() => {
+    copyImageToClipboard(imageURL)
+      .then(() => showAlertCopy("Gambar"))
+      .catch((_e) => showErrorCopy());
+  };
+
+  const handleFeedbackModalClose =() => {
+    feedbackModal.onClose();
+    history.replace({
+      ...location,
+      state: { ...location.state, feedbackPopup: false },
+    });
+  };
+
+  const handleOpenGoogleCalendarModal =() => {
+    ReactGA.event({
+      category: "Integrasi Calendar",
+      action: "Opened Google Calendar Modal",
+    });
+    googleCalendarModal.onOpen();
+  };
+
+  return (
+    <>
+      <FeedbackModal
+        isOpen={feedbackModal.isOpen}
+        onClose={handleFeedbackModalClose}
+      />
+
+      <Modal isOpen={isOpen} onClose={onClose} isCentered>
+        <ModalOverlay />
+        <ModalContent bg={theme ==="light" ? "white" : "dark.LightBlack"}>
+          <ModalBody>Apakah kamu yakin ingin menghapus jadwal?</ModalBody>
+
+          <ModalFooter>
+            <Button
+              onClick={onClose}
+              variant="outline"
+              borderColor={
+                theme ==="light" ? "primary.Purple" : "dark.LightPurple"
+              }
+              color={theme ==="light" ? "primary.Purple" : "dark.Purple"}
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={() => confirmDeleteSchedule(schedule.id)}
+              variant="danger"
+            >
+              Hapus
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={shareModal.isOpen} onClose={shareModal.onClose} isCentered>
+        <ModalOverlay />
+        <ModalContent bg={theme ==="light" ? "white" : "dark.LightBlack"}>
+          <ModalCloseButton />
+          <ModalBody>
+            <Flex flexDirection="column">
+              <Text mb="8px">
+                Bagikan Jadwal <b>{scheduleName}</b>
+              </Text>
+              <Image alt="" src={imageURL} maxH="30vh" objectFit="contain" />
+            </Flex>
+          </ModalBody>
+
+          <ModalFooter>
+            <Flex flexDirection="column">
+              <Flex flexDirection={isMobile ? "column" : "row"}>
+                <CopyToClipboard
+                  text={`${window.location.href}/${scheduleId}`}
+                  onCopy={() => showAlertCopy("Link")}
+                >
+                  <Button
+                    variant="outline"
+                    mb={isMobile ? "8px !important" : "0"}
+                    borderColor={
+                      theme ==="light" ? "primary.Purple" : "dark.LightPurple"
+                    }
+                    color={theme ==="light" ? "primary.Purple" : "dark.Purple"}
+                  >
+                    <img
+                      src={theme ==="light" ? linkImg : linkDarkImg}
+                      style={{ marginRight: "4px" }}
+                      alt=""
+                    />
+                    Copy Link
+                  </Button>
+                </CopyToClipboard>
+                <Button
+                  variant="solid"
+                  onClick={copyImage}
+                  bg={theme ==="light" ? "primary.Purple" : "dark.LightPurple"}
+                  color={theme ==="light" ? "white" : "dark.White"}
+                >
+                  <img
+                    src={theme ==="light" ? copyImg : copyDarkImg}
+                    style={{ marginRight: "8px" }}
+                    alt=""
+                  />
+                  Copy Image
+                </Button>
+              </Flex>
+              <Flex mt="1rem">
+                <img
+                  src={theme ==="light" ? alertImg : alertDarkImg}
+                  style={{ height: "24px" }}
+                  alt=""
+                />
+                <Text fontSize={isMobile && "12px"}>
+                  <b>Copy Image</b> akan menyalin gambar ke clipboard sementara{" "}
+                  <b>Copy Link</b> akan menyalin link jadwal
+                </Text>
+              </Flex>
+            </Flex>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      <MainContainer>
+        <Helmet
+          title={scheduleName ? `Jadwal ${scheduleName}` : `Jadwal Untitled`}
+          meta={[{ name: "description", content: "Description of Jadwal" }]}
+        />
+
+        {schedule && (
+          <>
+            <Container>
+              <HeaderContainer>
+                <Flex
+                  direction="column"
+                  align="left"
+                  gap={{ base: "4px", md: "8px" }}
+                  maxW={{ base: "calc(100% - 110px)", md: "100%" }}
+                >
+                  <Link
+                    to="/jadwal"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    <RiArrowLeftLongLine
+                      color={theme ==="light" ? "#5038BC" : "#917DEC"}
+                      style={{
+                        fontSize: isMobile ? "1.25rem" : "2rem",
+                        cursor: "pointer",
+                      }}
+                    />
+                    <Text
+                      fontSize={{ base: "16px", sm: "18px", md: "24px" }}
+                      fontWeight="medium"
+                      color={
+                        theme ==="light"
+                          ? "secondary.GalacticPurple"
+                          : "dark.White"
+                      }
+                    >
+                      Daftar Jadwal
+                    </Text>
+                  </Link>
+                  {schedule.has_edit_access ? (
+                    <ScheduleNameEditable>
+                      <ControlledInput
+                        name={decodeHtmlEntity(schedule.name)}
+                        slug={match.params.scheduleId}
+                        rename={onRename}
+                      />
+                      <p>
+                        Dibuat pada{" "}
+                        {createdAt?.getDate() +
+                          "/" +
+                          (createdAt?.getMonth() + 1) +
+                          "/" +
+                          createdAt?.getFullYear()}{" "}
+                        • {totalCredits} SKS
+                      </p>
+                    </ScheduleNameEditable>
+                  ) : (
+                    <ScheduleName mode={theme}>
+                      {decodeHtmlEntity(schedule.name)}
+                    </ScheduleName>
+                  )}
+                </Flex>
+                <IconContainer isAuthenticated={Boolean(auth)}>
+                  <Icons
+                    Items={[
+                      {
+                        desc: "Download Jadwal",
+                        icon: downloadImg,
+                        alt: "download",
+                        action: downloadImage,
+                      },
+                      {
+                        desc: "Share Jadwal",
+                        icon: clipboardImg,
+                        alt: "copy",
+                        action: openShareModal,
+                      },
+                      {
+                        desc: "Delete Jadwal",
+                        icon: deleteImg,
+                        alt: "delete",
+                        action: onOpen,
+                      },
+                    ]}
+                  />
+                </IconContainer>
+              </HeaderContainer>
+              <ButtonContainer isAuthenticated={Boolean(auth)}>
+                <Flex
+                  direction="row"
+                  flexWrap="wrap"
+                  gap={{ base: "4px", sm: "8px", md: "15px" }}
+                  width="100%"
+                  justifyContent={{ base: "space-between", xl: "flex-end" }}
+                  alignItems="center"
+                >
+                  <Popover trigger="hover">
+                    <PopoverTrigger>
+                      <Button
+                        height={{ base: "38px", sm: "48px", md: "64px" }}
+                        flex={{ base: "1 1 100%", xl: "initial" }}
+                        minW="0"
+                        maxW="100%"
+                        intent="primary"
+                        variant="solid"
+                        bg={
+                          theme ==="light"
+                            ? "primary.Purple"
+                            : "dark.LightPurple"
+                        }
+                        borderColor={
+                          theme ==="light"
+                            ? "primary.Purple"
+                            : "dark.LightPurple"
+                        }
+                        color={theme ==="light" ? "white" : "dark.White"}
+                        fontWeight="medium"
+                        fontSize={{
+                          base: "10px",
+                          sm: "12px",
+                          md: "15px",
+                          lg: "18px",
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          compareModal.onOpen();
+                        }}
+                        gap={{ base: "3px", sm: "6px", md: "12px" }}
+                        px={{ base: "4px", sm: "10px", md: "20px" }}
+                        _hover={{
+                          bg:
+                            theme ==="light"
+                              ? "primary.DarkPurple"
+                              : "dark.Purple",
+                        }}
+                      >
+                        <Text
+                          as="span"
+                          fontSize="inherit"
+                          fontWeight="inherit"
+                          whiteSpace="nowrap"
+                          overflow="hidden"
+                          textOverflow="ellipsis"
+                        >
+                          Bandingkan Jadwal
+                        </Text>
+                        <Image
+                          src={compareSchedule}
+                          boxSize={{ base: "14px", sm: "18px", md: "26px" }}
+                          flexShrink={0}
+                          alt="compare-schedule"
+                        />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent width="250px">
+                      <PopoverArrow bgColor="#5038BC" />
+                      <PopoverBody
+                        bg="#E1E5FE"
+                        color="#5038BC"
+                        border="2px"
+                        borderColor="#5038BC"
+                        borderRadius="8px"
+                      >
+                        <Flex alignItems="center">
+                          <Image
+                            src={compareBulb}
+                            alt="Compare Schedule"
+                            boxSize="25px"
+                            mr="10px"
+                          />
+                          <Text fontWeight="bold" fontSize="md">
+                            Bandingkan jadwal dengan teman-mu!
+                          </Text>
+                        </Flex>
+                        <Text mt="10px" fontWeight="medium" fontSize="sm">
+                          Klik tombol share pada jadwal teman-mu, copy link
+                          jadwal tersebut, lalu input linknya di sini! Kamu bisa
+                          dengan mudah membandingkan jadwal dengan teman-mu!
+                        </Text>
+                      </PopoverBody>
+                    </PopoverContent>
+                  </Popover>
+
+                  <Button
+                    height={{ base: "38px", sm: "48px", md: "64px" }}
+                    flex={{ base: "1 1 0px", xl: "initial" }}
+                    minW="0"
+                    maxW="100%"
+                    mr="0"
+                    size="sm"
+                    px={{ base: "4px", sm: "10px", md: "20px" }}
+                    py={{ base: "4px", md: "20px" }}
+                    variant="solid"
+                    bg="secondary.Purple"
+                    color={
+                      theme ==="light"
+                        ? "secondary.GalacticPurple"
+                        : "primary.Purple"
+                    }
+                    onClick={handleOpenGoogleCalendarModal}
+                    fontSize={{
+                      base: "10px",
+                      sm: "12px",
+                      md: "15px",
+                      lg: "18px",
+                    }}
+                    fontWeight="medium"
+                    gap={{ base: "3px", sm: "6px", md: "12px" }}
+                    _hover={{
+                      bg:
+                        theme ==="light"
+                          ? "primary.DarkPurple"
+                          : "dark.Purple",
+                    }}
+                  >
+                    <Text
+                      as="span"
+                      fontSize="inherit"
+                      fontWeight="inherit"
+                      whiteSpace="nowrap"
+                      overflow="hidden"
+                      textOverflow="ellipsis"
+                    >
+                      Integrasi Kalender
+                    </Text>
+                    <Image
+                      src={ics2026Img}
+                      boxSize={{ base: "14px", sm: "18px", md: "26px" }}
+                      flexShrink={0}
+                      alt="export-to-ics"
+                    />
+                  </Button>
+
+                  <Link
+                    to={`/edit/${scheduleId}`}
+                    className="edit-schedule-link"
+                    style={{
+                      minWidth: 0,
+                      display: "flex",
+                    }}
+                  >
+                    <Button
+                      width="100%"
+                      height={{ base: "38px", sm: "48px", md: "64px" }}
+                      fontWeight="medium"
+                      mr="0"
+                      intent="primary"
+                      variant="outline"
+                      borderColor={
+                        theme ==="light"
+                          ? "primary.Purple"
+                          : "secondary.Purple"
+                      }
+                      color={
+                        theme ==="light"
+                          ? "primary.Purple"
+                          : "secondary.Purple"
+                      }
+                      fontSize={{
+                        base: "10px",
+                        sm: "12px",
+                        md: "15px",
+                        lg: "18px",
+                      }}
+                      minW="0"
+                      px={{ base: "4px", sm: "10px", md: "20px" }}
+                      py={{ base: "4px", md: "14px" }}
+                      gap={{ base: "3px", sm: "6px", md: "12px" }}
+                    >
+                      <Text
+                        as="span"
+                        fontSize="inherit"
+                        fontWeight="inherit"
+                        whiteSpace="nowrap"
+                        overflow="hidden"
+                        textOverflow="ellipsis"
+                      >
+                        {schedule.has_edit_access ? "Edit" : "Copy"}
+                      </Text>
+                      <Image
+                        src={theme ==="light" ? pencilIcon : pencilIconDark}
+                        boxSize={{ base: "14px", sm: "18px", md: "26px" }}
+                        flexShrink={0}
+                        alt="edit schedule"
+                      />
+                    </Button>
+                  </Link>
+                </Flex>
+              </ButtonContainer>
+            </Container>
+            <ViewToggleContainer>
+              <ViewListContainer
+                isActive={!isDisplayTimetable}
+                onClick={() => setIsDisplayTimetable(false)}
+                mode={theme}
+              >
+                <ListMatkulIcon />
+                <Text fontWeight="semibold" fontSize="14px">
+                  List Matkul
+                </Text>
+              </ViewListContainer>
+              <ViewCalendarContainer
+                isActive={isDisplayTimetable}
+                onClick={() => setIsDisplayTimetable(true)}
+                mode={theme}
+              >
+                <CalendarIcon width={20} />
+                <Text fontWeight="semibold" fontSize="14px">
+                  Kalender Matkul
+                </Text>
+              </ViewCalendarContainer>
+            </ViewToggleContainer>
+          </>
+        )}
+
+        {isDisplayTimetable ? (
+          <Schedule
+            width="100%"
+            pxPerMinute={isMobile ? 0.7 : 0.9}
+            schedule={schedule}
+            startHour={7}
+            endHour={21}
+            showHeader
+            showLabel
+            showRoom
+          />
+        ) : (
+          <ScheduleList
+            formattedSchedule={formattedSchedule}
+            totalCredits={totalCredits}
+          />
+        )}
+
+        <div style={{ overflow: "hidden", minWidth: "1440px", height: "0" }}>
+          <div ref={refs}>
+            <DownloadRef
+              pxPerMinute={0.9}
+              schedule={schedule}
+              startHour={7}
+              endHour={21}
+              showHeader
+              showLabel
+              showRoom
+              formattedSchedule={formattedSchedule}
+            />
+          </div>
+        </div>
+      </MainContainer>
+
+      <GoogleCalendarModal
+        isOpen={googleCalendarModal.isOpen}
+        onClose={googleCalendarModal.onClose}
+        schedule={schedule}
+        generateICalendarFile={generateICalendarFile}
+      />
+
+      <CompareModal
+        isOpen={compareModal.isOpen}
+        onClose={compareModal.onClose}
+        scheduleId={schedule?.id}
+      />
+    </>
+  );
+}
+
+const ModalContent =styled(ChakraModalContent).attrs({
+  padding: { base: "16px 24px", lg: "20px 24px" },
+  width: { base: "90%", lg: "initial" },
+  textAlign: "center",
+})``;
+
+const ModalFooter =styled(ChakraModalFooter).attrs({
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  marginTop: { base: "12px", lg: "16px" },
+})`
+  button {
+    margin: 0px 4px;
+  }
+`;
+
+const MainContainer =styled.div`
+  padding: 0px !important;
+  margin: -56px -24px 0;
+
+  @media (min-width: 900px) {
+    margin: -36px -80px 0;
+  }
+`;
+
+const Container =styled.div`
+  padding: 24px 24px 0px;
+
+  @media (min-width: 1100px) {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 32px 80px 0px;
+
+    & > :nth-child(1) {
+      flex-grow: 1;
+    }
+  }
+`;
+
+const HeaderContainer =styled.div`
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  justify-content: space-between;
+  width: 100%;
+  margin-right: -8px;
+
+  @media (min-width: 1100px) {
+    width: auto;
+    margin-right: 0px;
+    position: relative;
+  }
+`;
+
+const IconContainer =styled.div`
+  display: flex;
+  flex-direction: row;
+  gap: 4px
+  justify-content: center;
+  align-items: center;
+
+  ${(props) =>
+    props.isAuthenticated ? "visibility: visible;" : "visibility: hidden;"}
+
+  @media (min-width: 1100px) {
+    margin-right: 20px;
+  }
+`;
+
+const ButtonContainer =styled.div`
+  align-items: center;
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+  a {
+    ${(props) =>
+      props.isAuthenticated ? "visibility: visible;" : "visibility: hidden;"}
+  }
+
+  a.edit-schedule-link {
+    flex: 1 1 0px;
+    @media (min-width: 1100px) {
+      flex: initial;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    margin-top: 0px;
+    margin-left: auto;
+    width: auto;
+    justify-content: flex-end;
+  }
+`;
+
+const ScheduleNameEditable =styled.div`
+  p {
+    text-align: left;
+    margin-top: 4px;
+    font-size: 12px;
+  }
+
+  @media (min-width: 900px) {
+    p {
+      font-size: 14px;
+    }
+  }
+`;
+
+const ScheduleName =styled.div`
+  font-size: 20px;
+  font-weight: bold;
+  color: ${(props) =>
+    props.mode ==="light"
+      ? props.theme.color.secondaryMineShaft
+      : props.theme.color.darkWhite};
+
+  @media (min-width: 600px) {
+    font-size: 26px;
+  }
+  @media (min-width: 900px) {
+    font-size: 32px;
+  }
+`;
+
+const ViewToggleContainer =styled.div`
+  display: flex;
+  flex-direction: row;
+  cursor: pointer;
+  border-radius: 1em;
+  justify-content: center;
+  padding: 16px 24px 20px;
+
+  @media (min-width: 900px) {
+    padding: 40px 80px;
+  }
+`;
+
+const ViewListContainer =styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  column-gap: 8px;
+  justify-content: center;
+  align-items: center;
+  background-color: ${(props) =>
+    props.isActive
+      ? props.theme.color.primaryPurple
+      : props.mode ==="light"
+      ? props.theme.color.primaryWhite
+      : props.theme.color.darkBlack};
+  padding: 10px 1rem;
+  border-top-left-radius: 1em;
+  border-bottom-left-radius: 1em;
+  border-left: 1px solid ${(props) => props.theme.color.primaryPurple};
+  border-top: 2px solid ${(props) => props.theme.color.primaryPurple};
+  border-bottom: 2px solid ${(props) => props.theme.color.primaryPurple};
+  svg,
+  p {
+    color: ${(props) =>
+      props.isActive
+        ? props.theme.color.primaryWhite
+        : props.theme.color.primaryPurple};
+  }
+`;
+
+const ViewCalendarContainer =styled.div`
+  display: flex;
+  flex: 1;
+  flex-direction: row;
+  column-gap: 8px;
+  justify-content: center;
+  align-items: center;
+  background-color: ${(props) =>
+    props.isActive
+      ? props.theme.color.primaryPurple
+      : props.mode ==="light"
+      ? props.theme.color.primaryWhite
+      : props.theme.color.darkBlack};
+  padding: 10px 1rem;
+  border-top-right-radius: 1em;
+  border-bottom-right-radius: 1em;
+  border-right: 1px solid ${(props) => props.theme.color.primaryPurple};
+  border-top: 2px solid ${(props) => props.theme.color.primaryPurple};
+  border-bottom: 2px solid ${(props) => props.theme.color.primaryPurple};
+
+  svg,
+  p {
+    color: ${(props) =>
+      props.isActive
+        ? props.theme.color.primaryWhite
+        : props.theme.color.primaryPurple};
+  }
+`;
+
+export default ViewSchedule;
