@@ -1,4 +1,5 @@
 export type UUID =string
+<<<<<<< HEAD
 export interface SectionSnapshot {
   code: string; capacity: number
   meetings: { weekday: Weekday; startTime: string; endTime: string; roomId: UUID | null; room: string | null; instructorId: UUID | null; instructor: string | null }[]
@@ -20,6 +21,8 @@ export interface ImportReport {
   courseCount: number; sectionCount: number; meetingCount: number
 }
 export interface ImportSummary { coursesCreated: number; groupsCreated: number; sectionsCreated: number; meetingsCreated: number }
+=======
+>>>>>>> origin/main
 export type Role ='STUDENT' | 'ADMIN'
 export type Weekday ='MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY'
 export type PreferredPeriod ='ANY' | 'MORNING' | 'AFTERNOON'
@@ -53,6 +56,7 @@ export interface GeneratedSchedule { id: string; sections: CalendarSection[]; op
 export interface GenerationResult { schedules: GeneratedSchedule[]; complete: boolean; explored: number; status?: 'SOLVED' | 'UNSAT' | 'TIMEOUT' | 'CANCELLED'; executionMillis?: number }
 export interface ServerGeneration { status: 'SOLVED' | 'UNSAT' | 'TIMEOUT' | 'CANCELLED'; schedules: { selectedSectionIds: UUID[]; sections: Section[]; weeklyMeetings: Meeting[]; optimizationScore: number; scoreExplanation: ScorePart[] }[]; metrics: { nodesVisited: number; backtracks: number; domainPruned: number; solutionsFound: number; executionMillis: number; complete: boolean } }
 export interface CopilotTurn { role: 'USER' | 'ASSISTANT'; content: string }
+<<<<<<< HEAD
 export interface RepairResult {
   originalScheduleId: UUID
   status: ServerGeneration['status']
@@ -63,6 +67,8 @@ export interface RepairResult {
     changes: { groupId: UUID; before: Section; after: Section }[]
   }[]
 }
+=======
+>>>>>>> origin/main
 export interface CopilotReply { answer: string; recommendedCourses: Course[]; scheduleCheck: ServerGeneration | null; catalogTruncated: boolean }
 export interface TwinSlot { id: string; label: string; weekday: Weekday; startTime: string; endTime: string; roomId: string | null; attendance: number }
 export interface TwinChange { meetingId: string; weekday: Weekday; startTime: string; endTime: string; roomId: string | null; attendance: number }

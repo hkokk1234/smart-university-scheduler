@@ -4,7 +4,10 @@ import com.smartuniversity.scheduler.catalog.api.*;
 import com.smartuniversity.scheduler.catalog.domain.*;
 import com.smartuniversity.scheduler.catalog.infrastructure.*;
 import com.smartuniversity.scheduler.platform.api.ApiException;
+<<<<<<< HEAD
 import com.smartuniversity.scheduler.notifications.ChangeService;
+=======
+>>>>>>> origin/main
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ public class CatalogAdministrationService {
     private final SectionRepository sections;
     private final InstructorRepository instructors;
     private final RoomRepository rooms;
+<<<<<<< HEAD
     private final ChangeService changes;
 
     public CatalogAdministrationService(CourseRepository courses, SemesterRepository semesters, SectionRepository sections,
@@ -28,6 +32,13 @@ public class CatalogAdministrationService {
         this.courses =courses; this.semesters =semesters; this.sections =sections;
         this.instructors =instructors; this.rooms =rooms;
         this.changes =changes;
+=======
+
+    public CatalogAdministrationService(CourseRepository courses, SemesterRepository semesters, SectionRepository sections,
+                                        InstructorRepository instructors, RoomRepository rooms) {
+        this.courses =courses; this.semesters =semesters; this.sections =sections;
+        this.instructors =instructors; this.rooms =rooms;
+>>>>>>> origin/main
     }
 
     public CourseDto createCourse(CreateCourseRequest request) {
@@ -48,10 +59,16 @@ public class CatalogAdministrationService {
                 .stream().map(CatalogDtoMapper::toDto).toList();
     }
 
+<<<<<<< HEAD
     public SectionDto updateSection(UUID id, UpdateSectionRequest request, UUID actorId) {
         Section section =sections.findById(id).orElseThrow(() -> ApiException.notFound("Section"));
         if (section.getVersion() !=request.version()) throw ApiException.conflict("Section was changed; reload it before updating");
         SectionDto before =CatalogDtoMapper.toDto(section);
+=======
+    public SectionDto updateSection(UUID id, UpdateSectionRequest request) {
+        Section section =sections.findById(id).orElseThrow(() -> ApiException.notFound("Section"));
+        if (section.getVersion() !=request.version()) throw ApiException.conflict("Section was changed; reload it before updating");
+>>>>>>> origin/main
         var slots =new HashSet<String>();
         for (MeetingRequest meeting : request.meetings()) {
             String slot =meeting.weekday() + "/" + meeting.startTime() + "/" + meeting.endTime();
@@ -71,9 +88,13 @@ public class CatalogAdministrationService {
             section.addMeeting(meeting.weekday(), meeting.startTime(), meeting.endTime(), assignment.instructor(), assignment.room());
         }
         sections.saveAndFlush(section);
+<<<<<<< HEAD
         SectionDto after =CatalogDtoMapper.toDto(section);
         changes.record(before, after, actorId);
         return after;
+=======
+        return CatalogDtoMapper.toDto(section);
+>>>>>>> origin/main
     }
 
     private record Assignment(MeetingRequest request, Instructor instructor, Room room) {}

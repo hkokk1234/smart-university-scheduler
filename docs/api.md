@@ -5,10 +5,13 @@ UUIDs identify resources. Never send passwords/tokens in URLs. Production requir
 
 ## Authentication
 
+<<<<<<< HEAD
 Administrator document import endpoints and row formats are documented in [PDF / Excel catalog import](catalog-import.md).
 
 Owner-scoped notification endpoints, authenticated SSE and administrator section history are documented in [live updates](live-updates.md).
 
+=======
+>>>>>>> origin/main
 `POST /auth/register` returns 201 and a STUDENT account with a short-lived access token:
 
 ```json
@@ -53,7 +56,10 @@ Page responses contain `content`, `page`, `size`, `totalElements`, `totalPages`.
 | POST `/schedules` | Save selection; 201 with Location header |
 | DELETE `/schedules/<uuid>` | Delete owned schedule; 204 |
 | POST `/schedules/generate` | Up to five ranked full schedules; see [solver examples and limits](solver.md) |
+<<<<<<< HEAD
 | POST `/schedules/<uuid>/repair` | Preview up to five alternatives ranked by fewest section replacements; see [repair workflow and API](schedule-repair.md) |
+=======
+>>>>>>> origin/main
 
 Save request (an empty `sectionIds` list saves a draft):
 

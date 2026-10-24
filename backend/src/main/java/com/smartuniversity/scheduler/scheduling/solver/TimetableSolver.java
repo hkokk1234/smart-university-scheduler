@@ -18,6 +18,7 @@ public final class TimetableSolver {
     public Result solve(Problem problem, int topK, long timeLimitMillis, LongSupplier clock, BooleanSupplier cancelled) {
         if (topK < 1 || topK > 5 || timeLimitMillis < 1 || timeLimitMillis > 60000)
             throw new IllegalArgumentException("Invalid search limits");
+<<<<<<< HEAD
         return new Search(problem, topK, timeLimitMillis, clock, cancelled, Map.of()).run();
     }
     /** Rank lexicographically: changed groups first, then preference score. */
@@ -35,6 +36,9 @@ public final class TimetableSolver {
         if (!baseline.keySet().equals(groups) || new HashSet<>(baseline.values()).size() !=groups.size())
             throw new IllegalArgumentException("Repair requires one original section for every required group");
         return new Search(problem, topK, timeLimitMillis, clock, cancelled, baseline).run();
+=======
+        return new Search(problem, topK, timeLimitMillis, clock, cancelled).run();
+>>>>>>> origin/main
     }
     private static boolean conflicts(Option a, Option b) {
         for (Slot first : a.meetings()) for (Slot second : b.meetings()) if (first.overlaps(second)) return true;
@@ -51,6 +55,7 @@ public final class TimetableSolver {
     private static final class Search {
         final Problem problem; final int topK; final long budgetNanos, start;
         final LongSupplier clock; final BooleanSupplier cancelled;
+<<<<<<< HEAD
         final Map<UUID, UUID> baseline;
         final Comparator<Solution> ranking;
         final PriorityQueue<Solution> best;
@@ -66,6 +71,14 @@ public final class TimetableSolver {
         int changes(Solution solution) {
             return (int) baseline.values().stream().filter(id -> !solution.selectedSectionIds().contains(id)).count();
         }
+=======
+        final PriorityQueue<Solution> best =new PriorityQueue<>(RANK.reversed());
+        long nodes, backtracks, pruned, found; Status stopped;
+        Search(Problem problem, int topK, long milliseconds, LongSupplier clock, BooleanSupplier cancelled) {
+            this.problem =problem; this.topK =topK; this.clock =clock; this.cancelled =cancelled;
+            budgetNanos =milliseconds * 1_000_000L; start =clock.getAsLong();
+        }
+>>>>>>> origin/main
         boolean stop() {
             if (stopped !=null) return true;
             if (cancelled.getAsBoolean()) stopped =Status.CANCELLED;
@@ -80,14 +93,22 @@ public final class TimetableSolver {
                     if (stop()) return result();
                     if (permitted(option, problem.preferences())) allowed.add(option); else pruned++;
                 }
+<<<<<<< HEAD
                 allowed.sort(Comparator.comparing((Option option) -> !option.id().equals(baseline.get(group.id())))
                         .thenComparing(Option::id, IDS)); domains.put(group.id(), allowed);
+=======
+                allowed.sort(Comparator.comparing(Option::id, IDS)); domains.put(group.id(), allowed);
+>>>>>>> origin/main
             }
             visit(domains, new ArrayList<>());
             return result();
         }
         Result result() {
+<<<<<<< HEAD
             List<Solution> ranked =new ArrayList<>(best); ranked.sort(ranking);
+=======
+            List<Solution> ranked =new ArrayList<>(best); ranked.sort(RANK);
+>>>>>>> origin/main
             Status status =stopped !=null ? stopped : (found ==0 ? Status.UNSAT : Status.SOLVED);
             return new Result(status, ranked, new Metrics(nodes, backtracks, pruned, found,
                     Math.max(0, (clock.getAsLong() - start) / 1_000_000), stopped ==null));
@@ -95,6 +116,7 @@ public final class TimetableSolver {
         void visit(Map<UUID, List<Option>> domains, List<Option> chosen) {
             if (stop()) return;
             nodes++;
+<<<<<<< HEAD
             if (!baseline.isEmpty() && best.size() ==topK) {
                 long lowerBound =chosen.stream().filter(o -> !o.id().equals(baseline.get(o.groupId()))).count();
                 // Any group whose original section has been pruned must also change.
@@ -102,11 +124,17 @@ public final class TimetableSolver {
                         .noneMatch(o -> o.id().equals(baseline.get(entry.getKey())))).count();
                 if (lowerBound > changes(best.peek())) { pruned++; return; }
             }
+=======
+>>>>>>> origin/main
             if (domains.isEmpty()) {
                 if (found !=Long.MAX_VALUE) found++;
                 Solution solution =score(chosen, problem.preferences());
                 if (best.size() < topK) best.add(solution);
+<<<<<<< HEAD
                 else if (ranking.compare(solution, best.peek()) < 0) { best.poll(); best.add(solution); }
+=======
+                else if (RANK.compare(solution, best.peek()) < 0) { best.poll(); best.add(solution); }
+>>>>>>> origin/main
                 return;
             }
             // TreeMap iteration supplies the stable UUID tie-break for MRV.

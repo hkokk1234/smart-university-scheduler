@@ -1,5 +1,8 @@
 import { useSession } from "@/features/auth/sessionStore"
+<<<<<<< HEAD
 import { consumeEventStream, type StreamEvent } from './eventStream'
+=======
+>>>>>>> origin/main
 import type { ApiErrorBody, AuthResponse, CourseDetail, CourseFilters, Course, GenerationPreferences, Instructor, Page, Room, SavedSchedule, Section, SectionUpdate, Semester, ServerGeneration, CopilotReply, CopilotTurn } from './types'
 
 export class ApiError extends Error {
@@ -17,7 +20,11 @@ async function request<T>(path: string, options: RequestInit & { private?: boole
   const { private: authenticated, ...init } =options
   const headers =new Headers(init.headers)
   headers.set('Accept', 'application/json')
+<<<<<<< HEAD
   if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
+=======
+  if (init.body) headers.set('Content-Type', 'application/json')
+>>>>>>> origin/main
   if (authenticated) {
     const token =useSession.getState().token
     if (!token) throw new ApiError(401, 'Please sign in to continue.')
@@ -49,6 +56,7 @@ function params(values: Record<string, string | number | undefined>) {
   return query.size ? '?' + query.toString() : ''
 }
 export const api ={
+<<<<<<< HEAD
   notifications: (page =0, size =20, signal?: AbortSignal) => request<import('./types').NotificationInbox>('/notifications' + params({ page, size }), { private: true, signal }),
   readNotification: (id: string) => request<void>('/notifications/' + encodeURIComponent(id) + '/read', { method: 'POST', private: true }),
   readAllNotifications: () => request<void>('/notifications/read-all', { method: 'POST', private: true }),
@@ -59,6 +67,8 @@ export const api ={
   },
   validateImport: (semesterId: string, rows: import('./types').ImportRow[], signal?: AbortSignal) => request<import('./types').ImportReport>('/admin/catalog-import/validate', { method: 'POST', private: true, signal, body: JSON.stringify({ semesterId, rows }) }),
   commitImport: (semesterId: string, rows: import('./types').ImportRow[], signal?: AbortSignal) => request<import('./types').ImportSummary>('/admin/catalog-import/commit', { method: 'POST', private: true, signal, body: JSON.stringify({ semesterId, rows }) }),
+=======
+>>>>>>> origin/main
   simulateCampus: (semesterId: string, changes: import('./types').TwinChange[], signal?: AbortSignal) => request<import('./types').TwinComparison>('/admin/digital-twin/simulate', { method: 'POST', private: true, signal, body: JSON.stringify({ semesterId, changes }) }),
   copilotStatus: (signal?: AbortSignal) => request<{ available: boolean }>('/copilot/status', { private: true, signal }),
   copilotChat: (payload: { semesterId: string; message: string; courseIds: string[]; history: CopilotTurn[]; preferences: GenerationPreferences }, signal?: AbortSignal) => request<CopilotReply>('/copilot/chat', { method: 'POST', private: true, signal, body: JSON.stringify(payload) }),
@@ -69,8 +79,11 @@ export const api ={
   course: (id: string, signal?: AbortSignal) => request<CourseDetail>('/courses/' + encodeURIComponent(id), { signal }),
   section: (id: string, signal?: AbortSignal) => request<Section>('/sections/' + encodeURIComponent(id), { signal }),
   schedules: (page =0, size =12, signal?: AbortSignal) => request<Page<SavedSchedule>>('/schedules' + params({ page, size }), { signal, private: true }),
+<<<<<<< HEAD
   schedule: (id: string, signal?: AbortSignal) => request<SavedSchedule>('/schedules/' + encodeURIComponent(id), { signal, private: true }),
   repairSchedule: (id: string, excludedSectionIds: string[], preferences: GenerationPreferences, signal?: AbortSignal) => request<import('./types').RepairResult>('/schedules/' + encodeURIComponent(id) + '/repair', { method: 'POST', private: true, signal, body: JSON.stringify({ excludedSectionIds, maxResults: 5, preferences }) }),
+=======
+>>>>>>> origin/main
   generate: (semesterId: string, courseIds: string[], preferences: GenerationPreferences, signal?: AbortSignal) => request<ServerGeneration>('/schedules/generate', { method: 'POST', private: true, signal, body: JSON.stringify({ semesterId, courseIds, maxResults: 5, preferences }) }),
   saveSchedule: (semesterId: string, name: string, sectionIds: string[]) => request<SavedSchedule>('/schedules', { method: 'POST', private: true, body: JSON.stringify({ semesterId, name, sectionIds }) }),
   deleteSchedule: (id: string) => request<void>('/schedules/' + encodeURIComponent(id), { method: 'DELETE', private: true }),
@@ -79,6 +92,7 @@ export const api ={
   rooms: (signal?: AbortSignal) => request<Room[]>('/admin/rooms', { private: true, signal }),
   instructors: (signal?: AbortSignal) => request<Instructor[]>('/admin/instructors', { private: true, signal }),
 }
+<<<<<<< HEAD
 
 export async function streamNotifications(signal: AbortSignal, onEvent: (event: StreamEvent) => void) {
   const token =useSession.getState().token
@@ -93,3 +107,5 @@ export async function streamNotifications(signal: AbortSignal, onEvent: (event: 
   }
   await consumeEventStream(response, deadline, onEvent)
 }
+=======
+>>>>>>> origin/main

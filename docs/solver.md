@@ -5,9 +5,12 @@ JDK. `TimetableSolver` can be constructed and tested without Spring, a database,
 Spring's `ScheduleGenerationService` adapts catalog DTOs into this model and enriches the
 result with course, instructor and room details. No generated schedule is automatically saved.
 
+<<<<<<< HEAD
 The solver also supports [minimal-change repair](schedule-repair.md) of saved schedules,
 with section replacements as the primary objective and branch-and-bound pruning.
 
+=======
+>>>>>>> origin/main
 ## CSP and hard constraints
 
 The variables are **all published section groups** for the selected courses. Every group

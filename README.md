@@ -47,6 +47,7 @@ Built with **React, TypeScript, Java, Spring Boot, and PostgreSQL**, the project
 - [Contributing](#-contributing)
 - [License](#-license)
 
+<<<<<<< HEAD
 ## Implemented: minimal-change schedule repair
 
 From **Saved schedules → Repair**, find conflict-free alternatives ranked first by the fewest section replacements, then by your scheduling preferences. Exclude cancelled sections, compare exact changes, and save the chosen repair as a new plan. The solver uses branch and bound and reports when a time limit prevents proof of optimality. See [workflow, API, algorithm, and tests](docs/schedule-repair.md).
@@ -57,6 +58,10 @@ Section edits now provide [live timetable updates and durable change history](do
 
 Administrators can also [import PDF and Excel timetables](docs/catalog-import.md), map columns, correct meeting rows, validate against existing catalog entries and publish a complete batch atomically.
 
+=======
+## Why This Project?
+
+>>>>>>> origin/main
 University students often struggle to create weekly schedules because courses have multiple sections, conflicting time slots, and different attendance requirements.
 
 This project aims to make academic planning simpler while serving as a practical open-source reference for full-stack development and scheduling algorithms.

@@ -24,9 +24,14 @@ import java.util.UUID;
 public class ScheduleController {
     private final ScheduleService schedules;
     private final ScheduleReadService reader;
+<<<<<<< HEAD
     private final ScheduleGenerationService generation;
     public ScheduleController(ScheduleService schedules, ScheduleReadService reader, ScheduleGenerationService generation) {
         this.schedules =schedules; this.reader =reader; this.generation =generation;
+=======
+    public ScheduleController(ScheduleService schedules, ScheduleReadService reader) {
+        this.schedules =schedules; this.reader =reader;
+>>>>>>> origin/main
     }
 
     @GetMapping
@@ -55,6 +60,7 @@ public class ScheduleController {
                 .cacheControl(CacheControl.noStore()).body(schedule);
     }
 
+<<<<<<< HEAD
     @PostMapping("/{id}/repair")
     @Operation(summary ="Preview conflict-free repairs ranked by fewest section changes; the original is preserved")
     public ResponseEntity<RepairResponse> repair(@PathVariable UUID id, @AuthenticationPrincipal Jwt principal,
@@ -64,6 +70,8 @@ public class ScheduleController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(generation.repair(original, request));
     }
 
+=======
+>>>>>>> origin/main
     @DeleteMapping("/{id}")
     @Operation(summary ="Delete an owned schedule")
     public ResponseEntity<Void> delete(@PathVariable UUID id, @AuthenticationPrincipal Jwt principal) {

@@ -15,10 +15,14 @@ const CourseDetailsPage =lazy(() => import('@/features/catalog/CourseDetailsPage
 const BuilderPage =lazy(() => import('@/features/planner/BuilderPage'))
 const ResultsPage =lazy(() => import('@/features/planner/ResultsPage'))
 const SavedSchedulesPage =lazy(() => import('@/features/schedules/SavedSchedulesPage'))
+<<<<<<< HEAD
 const NotificationsPage =lazy(() => import('@/features/notifications/NotificationsPage'))
 const RepairSchedulePage =lazy(() => import('@/features/schedules/RepairSchedulePage'))
 const AdminPage =lazy(() => import('@/features/admin/AdminPage'))
 const CatalogImportPage =lazy(() => import('@/features/admin/CatalogImportPage'))
+=======
+const AdminPage =lazy(() => import('@/features/admin/AdminPage'))
+>>>>>>> origin/main
 const SettingsPage =lazy(() => import('@/features/settings/SettingsPage'))
 const CopilotPage =lazy(() => import('@/features/copilot/CopilotPage'))
 const DigitalTwinPage =lazy(() => import('@/features/digital-twin/DigitalTwinPage'))
@@ -67,10 +71,14 @@ export function App() {
       <Route path="builder" element={<ProtectedRoute><BuilderPage /></ProtectedRoute>} />
       <Route path="results" element={<ProtectedRoute><ResultsPage /></ProtectedRoute>} />
       <Route path="saved" element={<ProtectedRoute><SavedSchedulesPage /></ProtectedRoute>} />
+<<<<<<< HEAD
       <Route path="notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
       <Route path="saved/:scheduleId/repair" element={<ProtectedRoute><RepairSchedulePage /></ProtectedRoute>} />
       <Route path="admin" element={<ProtectedRoute admin><AdminPage /></ProtectedRoute>} />
       <Route path="admin/import" element={<ProtectedRoute admin><CatalogImportPage /></ProtectedRoute>} />
+=======
+      <Route path="admin" element={<ProtectedRoute admin><AdminPage /></ProtectedRoute>} />
+>>>>>>> origin/main
       <Route path="digital-twin" element={<ProtectedRoute admin><DigitalTwinPage /></ProtectedRoute>} />
       <Route path="settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
       <Route path="copilot" element={<ProtectedRoute><CopilotPage /></ProtectedRoute>} />

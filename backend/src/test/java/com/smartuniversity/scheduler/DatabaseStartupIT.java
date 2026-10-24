@@ -121,7 +121,11 @@ class DatabaseStartupIT {
         String url =POSTGRES.getJdbcUrl().replace("/scheduler_tests", "/scheduler_production_check");
         Flyway production =Flyway.configure().dataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword())
                 .locations("classpath:db/migration").load();
+<<<<<<< HEAD
         assertThat(production.migrate().migrationsExecuted).isEqualTo(4);
+=======
+        assertThat(production.migrate().migrationsExecuted).isEqualTo(3);
+>>>>>>> origin/main
         assertThat(production.info().current().getVersion().getVersion()).isEqualTo("3");
         assertThat(production.validateWithResult().validationSuccessful).isTrue();
         assertThat(production.migrate().migrationsExecuted).isZero();

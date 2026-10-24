@@ -4,8 +4,11 @@ import com.smartuniversity.scheduler.catalog.api.*;
 import com.smartuniversity.scheduler.catalog.application.CourseService;
 import com.smartuniversity.scheduler.scheduling.api.*;
 import com.smartuniversity.scheduler.scheduling.solver.*;
+<<<<<<< HEAD
 import com.smartuniversity.scheduler.platform.api.ApiException;
 import org.springframework.http.HttpStatus;
+=======
+>>>>>>> origin/main
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import java.util.*;
@@ -26,6 +29,7 @@ public class ScheduleGenerationService {
         this.catalog =catalog; this.maxMillis =maxMillis; this.maxGroups =maxGroups; this.maxOptions =maxOptions;
     }
     public GenerationResponse generate(GenerateScheduleRequest request) {
+<<<<<<< HEAD
         CatalogProblem loaded =load(request);
         Result result =solver.solve(loaded.problem(), limit(request.maxResults()), budget(request.timeLimitMillis()));
         return new GenerationResponse(result.status(), result.schedules().stream()
@@ -71,6 +75,8 @@ public class ScheduleGenerationService {
     private long budget(Long requested) { return requested ==null ? maxMillis : Math.min(maxMillis, requested); }
     private record CatalogProblem(Problem problem, Map<UUID, SectionDto> sections) {}
     private CatalogProblem load(GenerateScheduleRequest request) {
+=======
+>>>>>>> origin/main
         Set<UUID> courseIds =new HashSet<>(request.courseIds());
         if (courseIds.size() !=request.courseIds().size()) throw new IllegalArgumentException("Duplicate courses");
         List<Group> groups =new ArrayList<>(); Map<UUID, SectionDto> sections =new HashMap<>();
@@ -90,13 +96,24 @@ public class ScheduleGenerationService {
                 if (groups.size() > maxGroups) throw new IllegalArgumentException("Too many required groups");
             }
         }
+<<<<<<< HEAD
         return new CatalogProblem(new Problem(request.semesterId(), courseIds, groups, request.preferenceModel()), sections);
     }
     private GenerationResponse.GeneratedSchedule generated(Solution solution, Map<UUID, SectionDto> sections) {
+=======
+        Result result =solver.solve(new Problem(request.semesterId(), courseIds, groups, request.preferenceModel()),
+                request.maxResults() ==null ? 5 : request.maxResults(),
+                request.timeLimitMillis() ==null ? maxMillis : Math.min(maxMillis, request.timeLimitMillis()));
+        return new GenerationResponse(result.status(), result.schedules().stream().map(solution -> {
+>>>>>>> origin/main
             List<SectionDto> selected =solution.selectedSectionIds().stream().map(sections::get).toList();
             List<MeetingDto> meetings =selected.stream().flatMap(s -> s.meetings().stream()).sorted(
                     Comparator.comparing(MeetingDto::weekday).thenComparing(MeetingDto::startTime).thenComparing(m -> m.id().toString())).toList();
             return new GenerationResponse.GeneratedSchedule(solution.selectedSectionIds(), selected, meetings,
                     solution.optimizationScore(), solution.scoreExplanation());
+<<<<<<< HEAD
+=======
+        }).toList(), result.metrics());
+>>>>>>> origin/main
     }
 }

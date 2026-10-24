@@ -46,7 +46,10 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/v1/schedules", "/api/v1/schedules/**").hasAnyRole("STUDENT", "ADMIN")
                         .requestMatchers("/api/v1/copilot/**").hasAnyRole("STUDENT", "ADMIN")
+<<<<<<< HEAD
                         .requestMatchers("/api/v1/notifications", "/api/v1/notifications/**").hasAnyRole("STUDENT", "ADMIN")
+=======
+>>>>>>> origin/main
                         .anyRequest().denyAll())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(entryPoint).accessDeniedHandler(denied))

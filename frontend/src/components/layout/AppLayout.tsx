@@ -7,7 +7,10 @@ import { usePlanner } from "@/features/planner/plannerStore"
 import { Button } from '@/components/ui/button'
 import { Dialog } from '@/components/ui/dialog'
 import { mergeClassNames } from "@/lib/classNames"
+<<<<<<< HEAD
 import { NotificationBell } from '@/features/notifications/NotificationBell'
+=======
+>>>>>>> origin/main
 
 const items =[
   { to: '/', label: 'Overview', icon: LayoutDashboard },
@@ -15,7 +18,10 @@ const items =[
   { to: '/builder', label: 'Schedule builder', icon: CalendarDays },
   { to: '/results', label: 'Generated results', icon: Sparkles },
   { to: '/saved', label: 'Saved schedules', icon: Bookmark },
+<<<<<<< HEAD
   { to: '/notifications', label: 'Timetable updates', icon: CalendarDays },
+=======
+>>>>>>> origin/main
   { to: '/copilot', label: 'AI Academic Copilot', icon: Sparkles },
   { to: '/digital-twin', label: 'Campus Digital Twin', icon: LayoutDashboard, admin: true },
 ]
@@ -46,7 +52,11 @@ export function AppLayout() {
     <div className="lg:pl-64">
       <header className="sticky top-0 z-20 flex h-20 items-center justify-between gap-3 border-b bg-card/95 px-5 backdrop-blur-sm sm:px-8">
         <div className="flex items-center gap-3"><Button variant="ghost" size="sm" aria-label="Open navigation" onClick={() => setMenuOpen(true)} className="lg:hidden"><Menu size={20} /></Button><div className="text-sm"><span className="hidden text-muted-foreground sm:inline">Workspace <span className="mx-2 text-border">/</span></span><span className="font-medium">{current?.label ?? 'Course details'}</span></div></div>
+<<<<<<< HEAD
         <div className="flex items-center gap-4"><NotificationBell /><Link to="/catalog" className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Search courses"><Search size={19} /></Link><span className="hidden h-7 w-px bg-border sm:block" /><div className="hidden text-right sm:block"><p className="text-xs font-semibold">{user?.displayName}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{user?.role ==='ADMIN' ? 'Administrator' : 'Student account'}</p></div><span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary" aria-label={user?.displayName}>{user?.displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('')}</span></div>
+=======
+        <div className="flex items-center gap-4"><Link to="/catalog" className="rounded-lg p-2 text-muted-foreground hover:bg-muted" aria-label="Search courses"><Search size={19} /></Link><span className="hidden h-7 w-px bg-border sm:block" /><div className="hidden text-right sm:block"><p className="text-xs font-semibold">{user?.displayName}</p><p className="mt-0.5 text-[11px] text-muted-foreground">{user?.role ==='ADMIN' ? 'Administrator' : 'Student account'}</p></div><span className="flex size-9 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary" aria-label={user?.displayName}>{user?.displayName.split(/\s+/).slice(0, 2).map((part) => part[0]).join('')}</span></div>
+>>>>>>> origin/main
       </header>
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-[1600px] space-y-7 p-5 outline-none sm:p-8 lg:p-9"><Suspense fallback={<LoadingState />}><Outlet /></Suspense></main>
       <footer className="mx-auto flex max-w-[1600px] flex-wrap justify-between gap-2 px-8 pb-6 text-[11px] text-muted-foreground"><span>Smart University Scheduler</span><span>Your courses.Your time.Your plan.</span></footer>

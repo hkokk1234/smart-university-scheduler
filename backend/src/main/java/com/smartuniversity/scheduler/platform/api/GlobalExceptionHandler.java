@@ -15,8 +15,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+<<<<<<< HEAD
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
+=======
+>>>>>>> origin/main
 import java.time.Instant;
 import java.util.LinkedHashMap;
 
@@ -52,7 +55,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentTypeMismatchException.class,
+<<<<<<< HEAD
             MissingServletRequestParameterException.class, MissingServletRequestPartException.class, HandlerMethodValidationException.class})
+=======
+            MissingServletRequestParameterException.class, HandlerMethodValidationException.class})
+>>>>>>> origin/main
     ResponseEntity<ApiError> badRequest(Exception error, HttpServletRequest request) {
         return respond(HttpStatus.BAD_REQUEST, "BAD_REQUEST", "Invalid request parameters", request);
     }
@@ -84,12 +91,16 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
     ResponseEntity<ApiError> unsupportedMedia(HttpServletRequest request) {
+<<<<<<< HEAD
         return respond(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "Use the content type required by this endpoint", request);
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     ResponseEntity<ApiError> uploadTooLarge(HttpServletRequest request) {
         return respond(HttpStatus.PAYLOAD_TOO_LARGE, "FILE_TOO_LARGE", "Choose a PDF or Excel file up to 5 MB", request);
+=======
+        return respond(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "UNSUPPORTED_MEDIA_TYPE", "Use application/json", request);
+>>>>>>> origin/main
     }
 
     @ExceptionHandler(Exception.class)

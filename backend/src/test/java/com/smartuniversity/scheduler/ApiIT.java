@@ -292,6 +292,7 @@ class ApiIT {
         postJson(path, token, Map.of("semesterId", SEMESTER, "changes", List.of(Map.of("meetingId", UUID.randomUUID(), "weekday", "MONDAY", "startTime", "09:00", "endTime", "10:00", "attendance", 10)))).andExpect(status().isBadRequest());
     }
 
+<<<<<<< HEAD
     @Test
     void catalogImportPreviewsWithoutWritesAndPublishesACompleteValidatedBatch() throws Exception {
         Account admin =admin();
@@ -365,6 +366,8 @@ class ApiIT {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM user_notifications WHERE user_id=?", Long.class, UUID.fromString(student.id()))).isEqualTo(1);
     }
 
+=======
+>>>>>>> origin/main
     private Account register() throws Exception {
         String email =UUID.randomUUID() + "@example.edu";
         JsonNode response =body(postJson("/api/v1/auth/register", null, Map.of("email", email, "displayName", "Test Student", "password", PASSWORD))

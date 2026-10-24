@@ -1,8 +1,14 @@
 import { afterEach, expect, it, vi } from 'vitest'
+<<<<<<< HEAD
 import { api, streamNotifications } from './api'
 import { useSession } from '@/features/auth/sessionStore'
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); useSession.getState().clear() })
+=======
+import { api } from './api'
+
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals() })
+>>>>>>> origin/main
 
 function pendingFetch() {
   vi.stubGlobal('fetch', vi.fn((_url: string, options: RequestInit) => new Promise((_resolve, reject) => {
@@ -28,6 +34,7 @@ it('preserves explicit cancellation without presenting it as a connection failur
   caller.abort()
   await expect(result).rejects.toMatchObject({ name: 'AbortError' })
 })
+<<<<<<< HEAD
 
 it('requests a private repair preview with exclusions and preserves the server change report', async () => {
   useSession.setState({ token: 'test-token' })
@@ -86,3 +93,5 @@ it('ends the local session if a stream reconnect receives an expired-token respo
   await expect(streamNotifications(new AbortController().signal, () => {})).rejects.toMatchObject({ status: 401 })
   expect(useSession.getState().token).toBeNull()
 })
+=======
+>>>>>>> origin/main
